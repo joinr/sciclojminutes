@@ -1,4 +1,6 @@
 * Chris Nuernberger Presentation on Tech.ML and More
+[[https://www.youtube.com/watch?v%3DNyMABoUEj20][video here]]
+
 [Dear reader, this is a good presentation.  You should take the time to watch it or grab
 the slides.  Chris did an excellent job tying together a bevy of knowledge and providing
 a great technical and social overview of the state of the ML in clojure.]
