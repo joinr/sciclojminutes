@@ -1,0 +1,775 @@
+* Chris Nuernberger Presentation on Tech.ML and More
+[Dear reader, this is a good presentation.  You should take the time to watch it or grab
+the slides.  Chris did an excellent job tying together a bevy of knowledge and providing
+a great technical and social overview of the state of the ML in clojure.]
+* QA / Discussion
+** Daniel 
+Can you talk about the ETL pipeline?
+** Chris Nuernberger 
+We were talking about it, and Alan said people are building complex training sets, then
+go to productize them and it's tough.
+
+- [Demos example notebook, shows kaggle competition example.]
+- [Speaks to benefits of getting an ETL together, proof of concept, also
+   current rough spots (focus on
+   productizing vs. simple porcelain
+   API, resulting in needing to do
+   things like quoting).]  
+
+So there's these bindings of data that you generate during training beyond the models
+you traqined that need to be represented in the production process.
+
+If you have a big dataset, you're going to replace the missing values with the mean, and
+during production you need to remember that mean os if you get missing values you get
+the same mean.
+
+That, combined with complex regression demonstration on Kaggle that I found, I basically
+cut and pasted the pandas and translated it into clojure data structures, and
+implemented a system that could run those data structures and produce the same results
+that Pandas did.
+
+** Daniel
+Can you show the code?
+
+** Chris Nuernberger 
+That was the main thing; it was helped a lot by the systems I built behind tech ascent
+were built to integrate well with other systems more than anything else.  I have systems
+where you can add a column to another column; easy to integrate because it was built to
+run on java arrays, then native arrays, then gpu; So I have kind of this general purpose
+middle ground fleshed out of doing some numerics but on unknown datastructures.
+
+[Shares screen] I'm going to show some subsections from it that I think are interesting;
+I got a lot of feedback when I made this, agree with all of it, like to let feedback sit
+for a while and let people use it.  This example, replace-missing "Alley" with "None",
+you have to remember this, carry all these little bits of data around.  You have to
+re-engineer your whole training pipeline, or like 99% of it again.  When you go to
+production, hopefully you won't make a mistake, but probably you will, or they're only
+wrong for some small percentage.  It's a really error prone process to carry this sort
+of data engineering and re-engineer it.  Sometimes we do really complex in-depth
+replacement of values, and we have to re-engineer that in a slightly different context.
+
+If it's a fixed value of replacing (that's not really common), replacing things with
+means or some specific thing; the end result of you training process isn't just your
+models, it should also be your pipeline.  REally your pipeline should be a graph,
+running the pipeline is a translation from one graph to second graph, and the second
+graph has you models and all your intermediate data.
+
+That was too agressive, I didn't want to do that as my first try.  I wanted to get one
+Kaggle example working, and I did.  The correlation table that I produced matches to the
+4th decimal place with the table pandas produced, and there's a lot of processing before
+we ever get to this correlation table.  That felt really good when that happened; that
+was the result of a lot of work that didn't happen by chance.
+
+This notebook is literally line-for-line exactly the same as the Kaggle example; I don't
+want to always hold to that for examples, because there are things that are more
+efficient to do in one system if you structure them differently.  That was the impetus
+for this; and I got a lot of feedback.
+
+That is something I'm going to address in v2, and we'll have a set of fixes around that.
+
+One of the most important points I made earlier, the whole system needs to be simple and
+without drama.  The pipeline misses the whole simple aspect because it's so data
+oriented; you can't really use the pipeline without quoting things and without doing a
+lot of other stuff.  That is your second step.  Your first step is going to be a bunch
+of dataset engineering and a model that trains well, second step is productizing it.  I
+think I made the productizing portion relatively too important, and the actual data
+manipulation portion while it's very efficient in this format is still awkward to use in
+the REPL in this form.
+
+** Chris Zheng
+It's a really great talk; I think I agree with you an alot of what's been said.  We are
+a small community; actually that is a huge problem.  What I'm finding here in China is
+that there are just some many developers and there are so many teams doing crazy sh*t,
+to get a leg up on them is very difficult.  Clojure is definitely helping, but again I
+totally agree on outreach.  It's very difficult to get both newbies and experts being
+interested in something like this.  They only way that I got people interested was to
+show them the salary, which just came out like 2 weeks ago.  The StackOverflow results
+helped a lot, adding credibility to Clojure.  For instance before, it'd be like "yeah we
+built this really cool thing", people would be like "what language are you using",
+"clojure" "what is this langauge?"  Now I just show them the salary, and people go "oh,
+ok" and there's no argument any more.  I know that experienced clojure developers are
+very rare.  People that want to get experience in this language is also very rare.  I
+really enjoyed the talk, you said a lot of things that resonated with me.
+
+** Carin Meier
+Having a set of kaggles for people to learn off of and get to using the tools is a great
+idea; It might be a good setting to have a meeting like this, to go through a Kaggle.
+
+** Rich Hickey
+Identified that the focus on C-ABIs is similar to the host relation between Clojure and
+Java, allowing a small language to leverage existing libraries.
+
+The magic C wrapping seems to be currently missing/underdeveloped, with the point being
+to trivially wrap/interop/communicate with other fundamental ecosystems directly,
+vs. leveraging 2nd order wrappers via JVM interop (e.g. Scala / Java).
+
+I thought it was great; the one thing you talked about I think is super critical is the
+C linkage.  You made the point at the end which was "let's build bridges and leverage
+other things other people are making," that's sort of the point of clojure in the first
+place; in the original design, being able to take advantage of java libraries was a
+fundamental idea, you know a new language is going to be small, you need a base of
+libraries.  It seems clear though that the libraries that need to support R and Python
+do so via C, and so what Clojure IMO is missing most is the ability to automagically tap
+into libraries written for Python via c-linkage.
+
+
+How much of the C interface stuff actually the C subset, as opposed to c++ or more
+challenging?  How common is the c binary model?  That is the first problem we have here,
+that if we could transparently tap into anything that's been written for PYthon, we're
+in a great place, we're in the same place we are relative to Java. So that's my
+question, The stuff you've built that does that bridging, how useful is it, how much can
+we apply it?
+
+What I see happening too often, I think, is we build things in Clojure on top of Java or
+Scala who've already sort of encapsulated the good bits of interacting with C, and we
+don't get the power that they have, for instance to do model definition, we have to use
+their model definition stuff a step-removed.  So is that C-subset common?  50%, 80%, 20%
+of the time?
+
+
+** Chris Nuernberger 
+Depends on how good the team is that built the library.  Really good teams put the C
+interface on themselves. Example, TVM, built by DMLC, headed by Chien? He puts a C
+interface on everything.  MXNET.  Very rare IMO.  Telling [someone who wrote a lot of
+C++] to develop a C interface is very painful to them.  That's so much extra code, my
+template parameters I have to code up explicitly, etc.  They're not fans of that.  Rust
+people I think are more fans of that.
+
+THere is an option that's not based on C interface via javacpp.  Generates JNI bindings
+for you automatically.  This is so far less ideal than I'd like, they use their own C++
+parser, they should have used Clang.  Instead they wrote 1/2 of one in Java.  THat being
+said, when I've wanted to bind the C++ library that javacpp supported poorly, I wrote a
+c++ header on the wrapper that would get compiled into C++ libraries.  It's doable; it's
+just muck work, and Javcpp is not as well designed as JNA.  You have 2 levels to get to
+C++ that are not as good when there's C.  The percentage of what we're running into,
+more modern things are done with C ABI bindings, because everybody wants r and python to
+work now, they don't want to write their own thing.  Potentially the world is coming
+around in ML.
+
+** Rich Hickey
+Follow up - you said that you wouldn't use MXNet through C vs. through the Scala, and
+Clojure on Scala, why would that be?
+
+** Chris Nuernberger 
+I don't want to disrespect members of the community who built a decent wrapper on top of
+existing thing.  THat includes Carin, but also includes the Scala people.  There are
+reasons I don't want to have a jar dependent on [scala version 10.2.month of day.of
+december 14] and that dependency is hard because scala compiles so much stuff at compile
+time. There is an argument for just using JNA and JNA'in into mxnet and going.  For
+instance, TVM integration.  There is some level of work that Clojure and the Scala
+bindings have done that I don't want to replicate, unless I have a really good reason to
+and then I would do it without apology.
+
+** Martin [NextJOurnal]
+If we're talking about integrating with R, certainly GraalVM is going to be interesting.
+Have you worked in that direction as well?
+** Chris Nuernberger 
+I've never taken a look at that.
+** Martin [NextJOurnal]
+Fastr is an alternative implementation for Graal, they have python as well, ruby even.
+There you get 0 interop between all those languages.  Like you could even theoretically;
+they do have an LLVM compiler as well to interpret LLVM bitcode as well
+** Chris Nuernberger 
+What is the benefit of that vs. using the JVM as the basis.
+** Martin [NextJOurnal]
+JVM is the basis, Carin has looked at it as well
+** Carin Meier
+Last time I looked at it, Python stuff was kinda like POC, they wanted to get it
+working, and they knew that getting all the C stuff and all the fiddly bits working was
+the tough part, and they were just starting on it, it was in the hello world stage.
+** Martin [NextJOurnal]
+Oracle has like 50 people working on it [graal].
+** Daniel
+There are 2 versions of R on the jvm, fastr (graal), and renjin.  Both of them are
+indeed R, in the sense of the R language, but both of them are missing or lacking many
+libraries, which may be one reason to use the large collection of libraries in the base
+implementation.  What is interesting is having - on the jvm - at least 2 versions of the
+R language, being able to parse R code and use R code, but not having the full
+collection of libaries yet.
+** Daniel
+Chris maybe could you show a  little bit of you source code?
+** Joe
+Can I ask a quick question before we switch gears?  Full time python/scala person at a
+massive fortune 100 company, dream of working in clojure trying to convince my boss it's
+the goto route so I can get that giant salaries like you guys.  I think a lot of the the
+reason clojure is interesting to a lot of guys like me, is its core principles, data
+structures leading to immutability, etc. it's wonderful.  When I look at the data
+science that we do at my company, it's notoriously undisciplined, it's a mess.  Growing
+the community is definitely important; I guess I'm worried a bit about growing the
+community at the expense of compromising those core principles that made it successul...
+** Chris Nuernberger 
+It makes sense; the libraries I built are not as axiomatic as the original language
+design, of course...I just need more input and good ideas.
+
+It goes back to the axiomatic stuff is orthogonal and infinitely composeable; the
+audience for the tech.ml stuff are not people who are going to compose it in new, crazy
+wawys; it's fairly newish machine learners on the clojure side who want to do some ML
+stuff, and maybe people from Python and R who maybe want to do some ML in clojure or
+learn some clojure, but don't want to learn a whole new way of doing stuff.
+
+Given time and a lot of thought, we can move portions of this stuff into more axiomatic,
+principled designs.  That takes time and thought, and can't happen quickly; at least I'm
+not of the level where I can do that really fast.
+
+** Joe
+That makes sense, sounds like we need to toe the line and you're being mindful of that.
+The root of it [at my work] is we have statisticians first, kind of programmers second.
+I'm losing all my hair trying to clean up their mess.  For them it's really jus the
+literate programming, notebook development.  If I can get them in a REPL not mutating
+everything over and over again, that might be a killer feature.  THe repl might be the
+thing that beats out the notebook some day.  If there's a way to put that graph /scatter
+plot in the repl some day, and get our data scientists thinking that this is a function
+and not a mishmash...
+
+** Chris Nuernberger 
+You have to be able to do realistic problems and complete them in a time that is
+interactive; realisitc problems are big; doing big things ina functional way is
+different than doing small things in a functional way.  That's where having a real
+numerics library and a small numerics background, having the option for immutable, but
+having the option for mutable when you get into a hole with big data; that was one of
+the core design principles of clojure that was really smart; it wasn't functional or
+bust; functional first but pretty mutable if you want second; that is fair and allows
+you to get the performance; my experience has been talking to people who have tried to
+use clojure for ML, when the performance is promised and it's not there, that leaves a
+very bad taste in someone's mouth.
+
+** Carin Meier
+Patrick put a question in the chat:
+** Chris Nuernberger 
+"What would be you sales pitch to clients about why they should go the ClojureML route
+instead of the traditional?"
+
+As far as that question goes, if I'm the one doing the ML I'd do it in Clojure.  I
+wouldn't go to someone out of the blue and - they're getting pitched by a python shop -
+say do it in clojure.  [You're not going to win that battle, no matter how right you are
+in that situation.]  I like the language design more than python; I did a lot of python,
+I did a whole lot of code generation in python back in my C++ and game development days.
+
+All the reasons that make clojure great are not things I would feel comfortable trying
+to pitch on a lot of times.  If you're going to do a small web app or an application
+where I really know I can hit clojure's strengths, I'll pitch that against anybody, but
+ML is not there yet. I wouldn't right now attempt that battle, and hopefully soon I
+would; before I would attempt that battle, lots of people would have to have success
+with Clojure doing ML.
+
+there'd have to be lots of notebooks of people doing it successfully.  there has to be
+at least a couple of python people who're like "man I did this in Clojure and it worked
+great for me" and there have to be a few R people who say the same thing.  Until that
+happens, I just feel like you're fighting such a big battle, I wouldn't attempt it.
+
+** Daniel
+I thought it could be nice to see a little bit of the code structure of what you have
+built, so people can get to know where to look if they wish to contact you?
+
+** Chris Nuernberger 
+[Anxious] Man, showing code, I'm going to really struggle how to do this...  THe code is
+dense, I write dense code...  I've got a new thing coming out, for instance, I took an
+APL program and and write it with my new system and got it to work.  My love is old
+school numerics, and APL is the granddaddy of them all; I'd say John McCarthy and Ken
+Iverson are at the top of what mankind's ever produced in Comp sci.  Ken Iverson doesn't
+get the credit he deserved because his language is very obtuse.  He wrote it in terms of
+describing math, never intended to make a language out of it.  He used it on whiteboards
+to teach math at universities or businesses and then he wrote a language out of it and
+that became APL.  His understanding of numerics and how to operate in a realm where
+machines were so limited, and yet he could do these intense mathematical transforms and
+how to do them efficiently, I think there's a lot to learn there for me; I will have
+blog posts about that soon, and they will be more code oriented.
+
+** Daniel
+I could open discussion of where we're going to.  Is there anything missing to have
+Clojure as an easy friendly tool for data scientists?  What in your opinion, everybody,
+may be missing?  The answer may be a very far wish you're looking for or something
+you're building?
+
+Is there anybody who's willing to talk about their wishes?
+
+** Henry Garner
+I'm Henry Garner, I wrote the book Clojure for Data Science [ed. great book], I'm a
+jobbing data scientist.  I try to use clojure as much as possible, but equally I can't
+write a lot of the libraries that I need and it's easier sometimes to reach for r.  I
+don't have any particular proficiency as an R programmer; I'm sure I write terrible R
+code, and I write what I need to get the job done.  I have a series of side projects:
+kixi.stats is what I'm known for, and it uses transducers to do stats.
+
+** Chris Nuernberger 
+Love that library, beautifully written
+
+** Henry
+I never got on with the notebook style of working; they're incredibly popular; I'm most
+at home in the REPL, in emacs.  The thing that I miss most is exploratory data science.
+I know that I can use clojure to build anything if I give it enough time, when I'm
+confronted with a new dataset and I want to discover its shape in a kind of abstract
+sense, I want the quickest path to getting some visualizations At the moment, I just
+don't do it I go to R [ggplot makes that very easy].  My particular head space is in how
+to scratch my own itch; it may not make clojure a more popular language for data
+science, becuase you're maybe not going to reach that audience who don't know why the
+REPL is good for them; for me coming from the clojure side of things, a repl-based
+exploration of data which allows easy visualization of data would be big
+
+** Chris Nuernberger 
+The way I did that, was to develop in the REPL and use OZ for my visualizations.  THe
+reason I think OZ is great is because it relies on vega/lite, and I really like the
+design of that language.  I really wish Vega was ported to one of the graphing libraries
+in Java so I don't have to bounce to clojurescript and back; actually I make a big
+markdown file to do that; it's clumsy.  Tomacsz has a good way of doing this.
+
+** Tomacsz
+I'm from Poland, and I wrote some libraries for clojure.  Fastmath wraps primitive math
+and the smile library, and a charting library written directly on the JVM.  It's
+contrary to current web-based approached; lot of libraries based on vega/JS, because of
+limitation talked about by Henry, I needed a library that was easy to use from the
+regular repl, able to save / display / generate hundreds of charts at once without
+having to run through a web browser.
+
+clj-plot is still in early stage, WIP.  What I'm doing now is producing; 
+I work on emacs and cider, I go through the Think Stats book, a very very
+basic book for explaining statistics; I use it for my tests and examples to
+test my library and test the approach.  If you click the link here, there's
+a markdown file produced directly from CLojure...
+
+** Daniel
+You can share you screen
+
+** Tomascz
+[Sharing]
+
+THe link is part of TS 2nd Edition, ch4.  The author made everything with Python.  I
+decided to work through Python notebooks purely in clojure, using tablesaw for
+dataframe, clj-plot, and fastmath.
+
+THis chapter is about some PDF/CDFs.  You can see charts which are in-line inserted into
+the notebook from images, but generated from clojure.
+
+Let me show the source code.  I have 4 chapters already; source code is markdown as a
+comment, with pure clojure code.
+
+I don't need any notebook library, only clojure and emacs.  I write in emacs and
+generate the markdown file.  Using a 23-line script, using marginalia.  It's easy and
+very easy to work with; just pure editor and later generate markdown for publication.
+
+** Daniel
+That's very exciting.  Could you speak a little about how your interactive process of
+working with data looks like?  You wouldn't want to render everything all the time
+right, but look into little pieces right?
+
+** Tomascz
+I asked Chris to take a look at my thinkstats examples to see how the direct tablesaw
+calls could be changed to tech.ml dataset.  Currently, I have some small wrapper around
+tablesaw.  It just wraps tablesaw; everything I saw in Chris's library, I hope to
+exchange this wrapper to tech.ml.dataset, but before chris published it.  I decided to
+stay with it to push things further.
+
+You see selectors, accessors, etc.  It's really simple.  Simple protocols, missing
+values, print table, fmap for mapping data and stays within the table type.
+
+We have kind of exploratory analysis of the dataset using printing the shape of the
+table, column-names, rows, etc. like in Henry's book in the exploratory analysis
+chapter.
+
+This is an exploratory REPL session demo, which follows the first chapter of Think
+Stats.
+
+** Chris Nuernberger 
+I like this approach; how clean it is, going from the book, respecting the way it looks
+in Python; even if you do things in functional ways instead, so you get a thing back
+instead of a place, or vice versa, I really like it.
+
+** Tomascz 
+Data frame library would be very helpful, glad that tablesaw exists, also happy to
+operate with sequence of maps.  We need to think about how to produce or provide common
+set of functions and protocols.  part of them are in core.matrix, but not for
+exploratory analysis.
+
+** Chris Zheng
+I'm using Tomascz's library clj-plot. IT's really good; the lattice feature is really
+good, it's when you have 3x4 plots, 12 plots in a row at the same time.  He's got a
+really good language for adding plots to the top, bottom, side .  It's not easy to get
+used to, but I think the language is really well designed, especially in building
+graphs.  I really love the library, I look forward to what he's going to come up with;
+it's really cool.
+
+** Tomascz
+thanks.  It's very very beginning stage on how charts are defined.  I can show some
+examples.
+
+** Chris Zheng
+Show the lattices, I think they're great.  I don't use R, but I think in actually going
+through the R book and generating things has been really helpful for me so far.
+
+** Tomascz
+With charts, I try to replicate vega and lattice library (ggplot), and something more.
+You can see here, the exact same examples as on vega site, every possible plot here; bar
+charts, scatter plots, bubble plots, confidence intervals, stacked area, normalized,
+stream, etc.  [dozens of charts].  Histograms, size-oriented to data.  Also lattice, or
+trellis plots.  Trying to replicate chapters, and it worked very well.  You can see the
+variety of things, even drawing parts, heatmaps, maybe some other examples that are not
+in vega or lattice.  CF plot, complex function visualization, density plot, vector field
+function, vector field flow, heatmaps, function with side-plot, density plot, stacked
+chart layers, scalar field.
+
+Currently I'm working on cleaning up the stuff, the configuration, building in a kind of
+DSL to make charts higher-level.  Currently, when you want to build a chart, you have to
+write very verbose piece of code.  That's the current state.  Link of the repo is in the
+chat.
+
+** M? [Apologies, couldn't catch the name, I rewound multiple times in vain :(]
+
+This is really awesome stuff.  You have your exploratory session there, and a nice DSL
+for accessing the data, shaping, etc.  You have a plan to port to tech.ml.  Would it
+make sense to have this type of exploratory layer with several backends to abstract an
+R-like exeprience on top of multiple low-level backends?
+
+** Tomascz
+My exploratory session was done very straightforward, java type library.  Chris's
+library is higher leve; uses different concepts behind tablesaw, including seqs of maps;
+also poses the question for Chris Nuernberger  on how to use his library for exploratory data
+analysis?
+
+** Chris Nuernberger 
+We're both on top of tablesaw; I wrote a lot more stuff around concating/joining
+datasets, doing hard math on the columns.  In that sense, the difference between the two
+is not much; so if you for instance, I will take a look at these and see how hard it
+would be to do the same in tech.ml.  If you chose to go with what Tomascz wrote and then
+went with tech.ml it won't be much difference.  There's no strong argument for
+exploratory stuff in my opinion.  When I built the dataset abstraction specifically, it
+was more geared toward taking the concept of training and making it production; it was
+one thing I could add to the conversation that pandas didn't have; truth of the matter
+is most work is in exploration; I geared it toward adding to the conversation and not
+practical.  Version 2 will be geared much more toward exploration.
+
+The people who've done exploration so far, have basically been building big pipeline
+generators, doing grid searches across the space of pipelines.  THat's much more high
+level than doing exploration on a dataset to get a feel for what's going on.
+
+** Daniel
+20 minutes before official end, is there anyone else willing to talk about their wishes
+or what they're building?
+
+** Joe
+Something that's worked for me - my goal is to sneak clojure into my company so I can be
+a full-time clojure programmer - data science is one aspect of it, I have a lot of
+internal customers making a mess in python, r; having limited success sneaking clojure
+in; where I'm having a lot of success is in the streaming area, and we haven't really
+talked at all about Spark - which I haven't had success with - but in the Kafka space I
+have had a lot of success - even calling other models built by other statisticians
+mid-stream.  I don't think it's in the context of this discussion, but maybe it's
+useful - folks are thinking it's possible with the tools and techniques we're talking
+about.
+
+My typical workflow is I get a statistician that saves a 
+jupyter notebook as a .py file, and seriously the last one they
+sent me was 12k lines of python code; I look through that 
+garbage to get it into a kafka data pipeline to have a near-realtime
+streaming scoring dataflow.
+
+** Chris Nuernberger 
+12K not 1200?
+
+** Joe
+12K of the same trash over and over again.
+
+** Chris Nuernberger 
+Wow! There's no abstraction there.
+
+** Joe
+No, they don't think that way, but the executives don't care because they get the right
+answer, or they think they get the right answer.  Of course there's no tests, so I can't
+refactor that code confidently; so I quarantine it, encapsulate it, and hopefully leave
+it to die on the vine until someone comes up with a better model that's cleaner...
+
+** Daniel
+What could be the answer to that?
+
+** Ben Kamphaus
+I was gonna talk about that a little bit.  One of the clojure data science success
+stories on the streaming side if what the HCA guys have done, they've done a couple of
+conj talks.  One is Clojure vs. Sepsis.  The notebook thing is something that happens a
+lot, and I'm personnally cautious about reshaping the workflow and doing it on the
+clojure side.  notebooks are great for sharing and they inline visualizations; it's less
+of a literate programming side and moreso of the being able to do visualization without
+context shifting to another monitor/folder, where your visualizations are getting
+dumped.  THat's the main time saving thing, but people get in this conditioning
+environment,where the only means; I get something, I'm going to do something else like
+that, I don't have an abstraction where I'm not led towards using functions and
+parameters especially if you lack that sort of training where you're coming from an
+ambient numerics background that may not be computer science or software engineering,
+you tend to copy-and-paste cells because that's how you get one new cell from another
+cell.
+
+I know that that is one of the areas they were concerned with, they have a lot of data
+scientists doing different stuff in various notebook things, and trying to consolidate
+the workflow around event streaming models; the on the desktop or instance side having
+the native contigous arrays in the right transpose order isn't what they're worried
+about, they're already working with the realities of latencies and when events fire off
+of machines out in the world, which is what their stack is around.
+
+Im doing work for a client right now, open client, but curious if anyone's doing datomic
+work in data science, and integrating with python/R teams, seems like a common pain
+point?
+
+Is anyone using datomic?
+
+** Joe
+Not yet; have todo list to put proof of concept together with datomic; currently using
+cosmos db (mongo like) stuff that we really don't need; immutability would be super
+helpful, need to turn that into executive language and weigh pros and cons and see if
+it's a good fit for our system, but not yet.
+
+** Ben Kamphaus
+So one of the things we're coming at is disparate sources for data, more at the scale
+sense rather than the pandas sense.  Lots of different scientists with medical, biology
+training programming in R; way of providing a tool to remap things in a data-driven way
+using an edn file to remap to go from tables generated on the R side into datomic
+schema, then letting queries drive that, and thos queries are being written against an R
+library using plaintext JSON.  Rather than going over transit / edn , you can work from
+the query grammar to come up with a plain-text compatible representation with a few edge
+cases; it's already on our plate to open source, we just don't know what the time table
+is; we're not sure if the ETL library will be open sourced or left as an example.
+
+** Chris Nuernberger 
+Where do you see Apache arrow fitting into that?
+
+** Ben Kamphaus
+Arrow is something - or any of these other wrapping jvm efforts - is proximal to the
+model or someone doing numerical analysis.  If you werre doing this in entirely clojure,
+and not someone in R, it'd be on the other side; you'd have queries that would come back
+and get parsed automatically into pandas-like tables so all the follow-on work would be
+against that, which is what they're doing now effectively, they issue these queries and
+get back tuples and datalog queries get parsed into tables on the R side, dataframes,
+and the R side works on the dataframes, and they do all that work against R dataframes
+with visualization and whatnot; sometimes objects are large and there's another step to
+work that out.
+
+The ETL side is interesting because what it's doing is clojure becomes a vehicle by
+which they're harnessing or tangling the mess of data science schemas; every time
+someone comes up with a schema that's a new schema in R that basically entails a schema
+for the data, rather than a one off view, everything that gets preserved gets preserved
+as a table int that one-off form; the problem is trying to make sense of n different
+schemas where every single data science workflow produces an arbitrary schema, arbitrary
+in the opposite sense of what datomic means; a schema that can be anything and you have
+to sit down and figure out what it means.
+
+This work is about getting stuff into a common representation, so the data scientist can
+get immediate insight into that. It's a model to possibly infect data science systems
+with clojure.
+
+Really liked the way the talk was framed; put some time into the TVM stack; delighted to
+see tech asccent already jumped on it, and provided a way to reach it in addition to the
+mxnet side.
+
+In terms of framining: it makes sense to frame the goals for clojure data science the
+same way that clojure's goals are largely framed; clojure should produce a clear
+advantage; if you work in clojure, you want it to produce a clear advantage; you don't
+want to convert every python or r person; you want to be pragmatic in working alongside
+them; what you want to get out of the libraries and everything else,
+e.g. metaprogramming facilities, there's an obvious choice for somebody who knows the
+clojure data science space to work there because of advantage; I built some that works
+better, iterate faster from protoype to production, or to initial prototype, built
+something more reliable goes out there and has less ops footprint or maintenance.  Going
+out and mitigating the other damage that ad-hoc data science workflows can produce in
+terms of understanding data, coupling to data sources you didn't know, reproducing
+problems in production, etc.  it can go in and do that without having to displace
+software producing models/low level numerics.  That's a reasonable strategy for a
+compelling case for clojure.  To get data scientists writing clojure primarily is a much
+longer struggle.  Has to be an iterative path.
+
+Unsure how much people are looking at Julia?
+
+** Chris Nuernberger 
+A ton.  I pay real close attention to Julia. So far they have a more thorough numerics
+stack, up through complex numbers (APL had that).  Same kind of things Clojure has.
+They also have auto compilation to a thing like TVM.  There's an autocompiler for GPU,
+distributed nodes, etc.  Hard to do with clojure and metaprogramming; TVM points a way
+forward in the long-run to building highly available systems.
+
+** Ben Kamphaus
+Talking about flux.ml and zygote?  Zygote is interesting because it does automatic
+differentation as a compiler extention rather than use a tensor library, like pytorch
+tensorflow, etc.  They provide operators that then provide AD.  Zygote does autodiff on
+the primitive compiler representation; based on the underlying femtolisp s-expressions
+and cons cells for doing AD.
+
+This comes out of them having leveraged an old lisp paper on AD, in their
+metaprogramming model.  THey're taking advantage of the representation and applying
+research to it to make a clear advantage.  If I go to Julia, I can just write Julia and
+flux.ml will do the heavy lifting.  In general, this is the weakness python and R,
+language won't do the heavy lifyting, but C++ libraries.
+
+** Chris Nuernberger 
+I thought about that; do so much bridging between native JVM in java array, write code
+to use native buffers.  Since python is so primitive, they had to go to native things
+really early which gave performance once they got over the early humps.  The JVM is
+dangerously powerful in itself, so it doesn't need to bridge and comes later.  So in ML
+world I'm finding out how to build a bridge to C/C++, where they did that 15 years ago
+out of necessity.  In java, we got parallell colt, etc. that work on JVM, never will be
+optimizable by TVM, or limited by hotspot SIMD optimization, you're in you island vs. I
+have to build bridges.
+
+** Daniel
+We're at 2 hour limit; conclude but continue conversation.
+
+We've had one talk, and several other things worth a talk in the upcoming meetings.
+Maybe meet every couple of weeks, if you wish to talk about anything let us talk.  What
+we are about in the next few weeks, are doing other part of building the community,
+website with all kinds of information, libraries, places to discuss.  We have been
+building little workgroups for small groups of people to have focused discussions of
+topics.  If any of you are willing to take part in the community building process, let
+us talk.  Several people here Chris, and Tomascz, and others not here Alan, and Joinr,
+and Chris Zheng were involved with this process.
+
+** Chris Zheng [I think]
+Ben, what were you looking at TVM for?
+
+** Ben Kamphaus
+Providing lower level programming in a way that's still clojure friendly, quasi
+imperative, already knew it was battle tested for ML.
+
+Chris came at it more clearly.
+
+** Chris Nuernberger 
+TVM is important not just because it does amazing, it teaches you a different way to
+think about performance optimization.  It's probably useful enough to use it enough to
+work your mind to its way of thinking, the way functional programming changes how you
+think, TVM does the same thing.
+
+** Daniel
+THe exact path of the process where clojure was used to R people for what they do, and
+the accute ways you created communications.  It seems similar to what we see here in my
+office, where Clojure is for production and R is for data science.
+
+** Ben Kamphaus
+Would like to talk more, but have to leave for another meeting...
+
+Initial project was enough of a success that we're looking at the next steps forward;
+presentation, evangelism, tools, possible open sourcing.  Will let people know more.
+
+** Daniel
+Anyone else?
+
+** Joe
+I think we all probably have seen the blogs and are aware of the next superpower with
+clojure.spec.  I've been using that for data profiling; excited to plug that into the
+Tomascz's repl-driven picture workflow.  It would be cool if I have a folder full of
+bunch of different specs or regexes for 100K maps in a seq that I could profile and get
+into pictures; wonder if I could use spec for feature engineering, could get messy..
+
+** Chris Nuernberger 
+I have struggled with spec.  I am very much no-rules type programmer.  I know that
+causes problems, not saying there's no place for spec; for me strongly typing my data
+structures is rarely something that I want to do; that being said, what you said reminds
+me of very strong, general purpose NLP that can pull structure out of pools of text,
+streams of text, like Q10 reports from stock market, being able to pull that out in some
+structured way.  There seems to be some parallel there between how you see using spec
+and pulling structured data out of stream->text.
+
+** Joe
+That's interesting.  Certainly the data science folks probably have that notion; I'm
+stuck in my ways trying to know everything about the data; The type driven programming
+synthesis talk at Strange Loop was great.  They looked at generating programs as kind of
+a search problem.
+
+** VJ
+Not a data scientist, data engineering side.  If you have an idea about setting up a
+website, I'd be happy to help.
+
+Has anyone looked into MLFlow.org, by the guys who are building databricks, to have a
+complete platform from data to production, a big framework sort of thing, that helps to
+put data science projects into production.  THis could be an interesting thing to look
+into.
+
+If you have a small working group to setup the website, I'd love to contribute; If you
+know anything about MLFlow, something like that would be helpful for people like me who
+are trying to put data science into production.
+
+** Daniel
+Could you talk more about MLFlow?
+
+** Joe
+Spark stack?
+
+** VJ
+They say you can use it for anything you'd like; I worked with a big bank in the
+netherlands to setup a ML pipeline for them using spark; one of the challenges was
+creating multiple experiments, push to production, deploy to the cloud.  MLFlow aims to
+do the whole package, coordinate the flow.  Design experiments, deploy to SageMaker AWS,
+etc.
+
+** Daniel
+What is sagemaker?
+
+** VJ 
+AWS ML environment.  We deploy our docker image there, fronted by an API, autoscales.
+This is probably a different, enterprisey world; there's a lot of use of python, but not
+agreed way of putting ML projects into production as quickly as possible.  THat's the
+biggest pain we're facing right now.  All the way from wrapping the data, to providing
+and API.  Looking for a solution; MLFlow seems to check those use cases, maybe the hive
+mind can look at it.
+
+** Chris Nuernberger 
+Your perspective is very very very important to the group and myself.  Exactly what you
+expressed is the impetus behind what I designed the data pipeline for tech.ml for.
+Productizing the exploratory modeling is very hard because you generate a whole lot of
+intermediate states.  How much information can a 3rd entity that didn't build the
+pipeline get out of it?  That's really a different, important perspective.
+
+** VJ
+ML / data scientists make the model, put it into production.  Then a different model
+comes.  I need to think like a product owner and A/B test different models in
+production.  I know clojure communities has amazing ideas, maybe this could be a
+challenge you could crack, different levels of challenges.
+
+** Daniel
+It would be great to hear more about your experience.
+
+My workplace has a related experience.  There are lots of datasets for localized /
+global geography.  Everyday interplay between data science, R&D, engineering; not about
+deploying ML, but deploying ETL and processing, defined by the researcher/scientist,
+eventually running in production.  R would be our main language for data science,
+clojure is the main technology for production/backend.  It's reinvented every time we
+need to extend something; Some brilliant people here have been defining a declarative
+data flow, which is similar to tech.ml; being declarative means it can be seen, analyze,
+and created from both sides [r and clojure].  We are allowing the R people to define the
+declarative data flow and run from clojure, just like production, without having to
+learn Clojure the language.  They are able to enjoy working with data in clojure without
+it being a main language.  R and Clojure are so similar, functional in a sense, lispy,
+developing a way of communication allows enjoying clojure more and more, to its full
+flexibility.
+
+In our case, it's more about standardizing data processing, inventing ways to reason
+about them in a unified way, not necessarily ML.
+
+** Chris Nuernberger 
+It's interesting to see convergence of R and Clojure.
+
+** Daniel
+Where we're going.  Little group of people talking on Zulip.  For us, it has become
+quite comfortable as a way to create small teams who communicate.  What we can try is to
+communicate there and build a way of creating knowledge that stays, and can be organized
+into an ongoing discussion.
+
+You are invited to join these groups - community building, website, etc.  Maybe you can
+ask what is missing for the community to be productive.  Part of what we found
+important, is to have these kind of meetings, maybe someday face to face.  What else can
+we do to coordinate?
+
+** VJ
+Zulip is a nice idea.  If there's a public log, maybe a gitter project with issues, that
+would help.  Something like the Rust guys, "are we there yet?" "are we ML yet?"  For me,
+the most interesting part is, if I want to talk to somebody from Python, for scikit we
+have this, for keras, this, for graphing etc.  A central place we can point people to
+would be very helpful.  That would help explain where there might be problems, and
+hopefully push clojure in areas.
+
+** Daniel
+Being able to tell other communities / platforms what it is about is not easy at the
+moment; Our local experience here, we tried to teach Clojure to people who are data
+scientists.  I can tell from that we were trying hard, and what we did was not good
+enough.  We could not create an effective continous learning experience for people.  We
+should say that at the moment, clojure is not so beginner friendly for data scientists.
+It's related to Chris Nuernberger's talk about popularity, but popularity is important
+for data science.  The technical story is only a by-product.  Hearing that clojure has a
+bias toward high salaries and more experienced people is not good news; it means that
+it's not so friendly towards newcomers, or less experienced.
+
+What we see here in our community in Tel Aviv, we need to wait for some of the new
+advances like Tomascz and Chris talked about, before we can sell it to newcomers.
