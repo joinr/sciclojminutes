@@ -313,9 +313,9 @@ The way I did that, was to develop in the REPL and use OZ for my visualizations.
 reason I think OZ is great is because it relies on vega/lite, and I really like the
 design of that language.  I really wish Vega was ported to one of the graphing libraries
 in Java so I don't have to bounce to clojurescript and back; actually I make a big
-markdown file to do that; it's clumsy.  Tomacsz has a good way of doing this.
+markdown file to do that; it's clumsy.  Tomasz has a good way of doing this.
 
-** Tomacsz
+** Tomasz
 I'm from Poland, and I wrote some libraries for clojure.  Fastmath wraps primitive math
 and the smile library, and a charting library written directly on the JVM.  It's
 contrary to current web-based approached; lot of libraries based on vega/JS, because of
@@ -332,7 +332,7 @@ a markdown file produced directly from CLojure...
 ** Daniel
 You can share you screen
 
-** Tomascz
+** Tomasz
 [Sharing]
 
 THe link is part of TS 2nd Edition, ch4.  The author made everything with Python.  I
@@ -354,7 +354,7 @@ That's very exciting.  Could you speak a little about how your interactive proce
 working with data looks like?  You wouldn't want to render everything all the time
 right, but look into little pieces right?
 
-** Tomascz
+** Tomasz
 I asked Chris to take a look at my thinkstats examples to see how the direct tablesaw
 calls could be changed to tech.ml dataset.  Currently, I have some small wrapper around
 tablesaw.  It just wraps tablesaw; everything I saw in Chris's library, I hope to
@@ -376,21 +376,21 @@ I like this approach; how clean it is, going from the book, respecting the way i
 in Python; even if you do things in functional ways instead, so you get a thing back
 instead of a place, or vice versa, I really like it.
 
-** Tomascz 
+** Tomasz 
 Data frame library would be very helpful, glad that tablesaw exists, also happy to
 operate with sequence of maps.  We need to think about how to produce or provide common
 set of functions and protocols.  part of them are in core.matrix, but not for
 exploratory analysis.
 
 ** Chris Zheng
-I'm using Tomascz's library clj-plot. IT's really good; the lattice feature is really
+I'm using Tomasz's library clj-plot. IT's really good; the lattice feature is really
 good, it's when you have 3x4 plots, 12 plots in a row at the same time.  He's got a
 really good language for adding plots to the top, bottom, side .  It's not easy to get
 used to, but I think the language is really well designed, especially in building
 graphs.  I really love the library, I look forward to what he's going to come up with;
 it's really cool.
 
-** Tomascz
+** Tomasz
 thanks.  It's very very beginning stage on how charts are defined.  I can show some
 examples.
 
@@ -398,7 +398,7 @@ examples.
 Show the lattices, I think they're great.  I don't use R, but I think in actually going
 through the R book and generating things has been really helpful for me so far.
 
-** Tomascz
+** Tomasz
 With charts, I try to replicate vega and lattice library (ggplot), and something more.
 You can see here, the exact same examples as on vega site, every possible plot here; bar
 charts, scatter plots, bubble plots, confidence intervals, stacked area, normalized,
@@ -414,14 +414,14 @@ DSL to make charts higher-level.  Currently, when you want to build a chart, you
 write very verbose piece of code.  That's the current state.  Link of the repo is in the
 chat.
 
-** M? [Apologies, couldn't catch the name, I rewound multiple times in vain :(]
+** Martin Varela
 
 This is really awesome stuff.  You have your exploratory session there, and a nice DSL
 for accessing the data, shaping, etc.  You have a plan to port to tech.ml.  Would it
 make sense to have this type of exploratory layer with several backends to abstract an
 R-like exeprience on top of multiple low-level backends?
 
-** Tomascz
+** Tomasz
 My exploratory session was done very straightforward, java type library.  Chris's
 library is higher leve; uses different concepts behind tablesaw, including seqs of maps;
 also poses the question for Chris Nuernberger  on how to use his library for exploratory data
@@ -431,7 +431,7 @@ analysis?
 We're both on top of tablesaw; I wrote a lot more stuff around concating/joining
 datasets, doing hard math on the columns.  In that sense, the difference between the two
 is not much; so if you for instance, I will take a look at these and see how hard it
-would be to do the same in tech.ml.  If you chose to go with what Tomascz wrote and then
+would be to do the same in tech.ml.  If you chose to go with what Tomasz wrote and then
 went with tech.ml it won't be much difference.  There's no strong argument for
 exploratory stuff in my opinion.  When I built the dataset abstraction specifically, it
 was more geared toward taking the concept of training and making it production; it was
@@ -616,7 +616,7 @@ we are about in the next few weeks, are doing other part of building the communi
 website with all kinds of information, libraries, places to discuss.  We have been
 building little workgroups for small groups of people to have focused discussions of
 topics.  If any of you are willing to take part in the community building process, let
-us talk.  Several people here Chris, and Tomascz, and others not here Alan, and Joinr,
+us talk.  Several people here Chris, and Tomasz, and others not here Alan, and Joinr,
 and Chris Zheng were involved with this process.
 
 ** Chris Zheng [I think]
@@ -651,7 +651,7 @@ Anyone else?
 ** Joe
 I think we all probably have seen the blogs and are aware of the next superpower with
 clojure.spec.  I've been using that for data profiling; excited to plug that into the
-Tomascz's repl-driven picture workflow.  It would be cool if I have a folder full of
+Tomasz's repl-driven picture workflow.  It would be cool if I have a folder full of
 bunch of different specs or regexes for 100K maps in a seq that I could profile and get
 into pictures; wonder if I could use spec for feature engineering, could get messy..
 
@@ -774,4 +774,4 @@ bias toward high salaries and more experienced people is not good news; it means
 it's not so friendly towards newcomers, or less experienced.
 
 What we see here in our community in Tel Aviv, we need to wait for some of the new
-advances like Tomascz and Chris talked about, before we can sell it to newcomers.
+advances like Tomasz and Chris talked about, before we can sell it to newcomers.
