@@ -19,7 +19,7 @@ go to productize them and it's tough.
    things like quoting).]  
 
 So there's these bindings of data that you generate during training beyond the models
-you traqined that need to be represented in the production process.
+you trained that need to be represented in the production process.
 
 If you have a big dataset, you're going to replace the missing values with the mean, and
 during production you need to remember that mean os if you get missing values you get
